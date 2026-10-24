@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Beri</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+  <main>
+    <section id="feed" class="screen active">
+      <input id="search" class="field" placeholder="Поиск: iphone, macbook, rtx...">
+      <div id="chips" class="chips"></div>
+      <div id="limitInfo" class="info"></div>
+      <div id="list"></div>
+    </section>
+
+    <section id="sniper" class="screen">
+      <h1>Beri</h1>
+      <p class="hint">Ордер — сохранённый фильтр. Укажите, что ищете, и мы покажем подходящие лоты.</p>
+      <form id="orderForm" class="form">
+        <input id="oQuery" class="field" placeholder="Что искать (например, iphone 13)" required>
+        <input id="oPrice" class="field" type="number" placeholder="Максимальная цена, ₽">
+        <input id="oDisc" class="field" type="number" placeholder="Минимальная скидка, %" value="20">
+        <button type="submit" class="btn">Создать ордер</button>
+      </form>
+      <div id="orders"></div>
+    </section>
+
+    <section id="favorites" class="screen">
+      <h1>Избранное</h1>
+      <div id="favList"></div>
+    </section>
+
+    <section id="profile" class="screen">
+      <h1>Профиль</h1>
+      <div id="profileBox"></div>
+    </section>
+  </main>
+
+  <nav class="tabbar">
+    <button class="tab active" data-target="feed">Лента</button>
+    <button class="tab" data-target="sniper">Beri</button>
+    <button class="tab" data-target="favorites">Избранное</button>
+    <button class="tab" data-target="profile">Профиль</button>
+  </nav>
+
+  <div id="modal" class="modal hidden">
+    <div class="modal-box">
+      <h2>Лимит открытий исчерпан</h2>
+      <p class="hint">Выберите тариф, чтобы открывать больше объявлений.</p>
+      <button class="btn" data-action="buy" data-plan="pro">Pro — 20 открытий в день</button>
+      <button class="btn gold" data-action="buy" data-plan="max">Max — без лимита</button>
+      <button class="btn ghost" data-action="close">Позже</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

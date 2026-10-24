@@ -1,0 +1,43 @@
+* { box-sizing: border-box; }
+body { margin: 0; background: #0f1115; color: #fff; font-family: sans-serif; }
+h1 { margin: 4px 0 12px; }
+.hint { color: #8b93a1; font-size: 14px; }
+
+.screen { display: none; padding: 16px; padding-bottom: 90px; }
+.screen.active { display: block; }
+
+.tabbar { position: fixed; bottom: 0; left: 0; right: 0; display: flex; background: #181b22; border-top: 1px solid #262a33; }
+.tab { flex: 1; padding: 14px 0; background: none; border: none; color: #8b93a1; font-size: 14px; }
+.tab.active { color: #4aa8ff; }
+
+.field { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 12px; border: 1px solid #262a33; background: #181b22; color: #fff; font-size: 15px; }
+.btn { width: 100%; padding: 12px; margin-top: 8px; border: none; border-radius: 12px; background: #4aa8ff; color: #fff; font-size: 15px; }
+.btn.gold { background: #e0a526; }
+.btn.ghost { background: #262a33; }
+.btn.small { width: auto; padding: 8px 12px; margin: 0; font-size: 13px; }
+.btn.red { background: #5a2530; }
+
+.chips { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 10px; }
+.chip { flex: none; padding: 8px 14px; border-radius: 20px; background: #181b22; border: none; color: #8b93a1; font-size: 14px; }
+.chip.active { background: #4aa8ff; color: #fff; }
+
+.info { background: #1d2230; border-radius: 12px; padding: 10px 12px; font-size: 14px; margin-bottom: 12px; }
+
+.card { background: #181b22; border-radius: 16px; padding: 14px; margin-bottom: 12px; position: relative; }
+.card .title { font-size: 16px; font-weight: 600; padding-right: 30px; }
+.card .row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.card .price { font-size: 22px; font-weight: 700; }
+.badge { background: #12361f; color: #3ddc84; padding: 3px 8px; border-radius: 8px; font-size: 13px; }
+.meta { color: #8b93a1; font-size: 13px; margin-top: 6px; }
+.star { position: absolute; top: 12px; right: 14px; font-size: 22px; background: none; border: none; color: #e0a526; }
+
+.order { background: #181b22; border-radius: 16px; padding: 14px; margin-bottom: 12px; }
+.order .top { display: flex; justify-content: space-between; align-items: center; }
+.order .actions { display: flex; gap: 8px; margin-top: 10px; }
+
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,.7); display: flex; align-items: flex-end; z-index: 10; }
+.modal.hidden { display: none; }
+.modal-box { width: 100%; background: #181b22; padding: 20px; border-radius: 20px 20px 0 0; }
+
+.stat { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #262a33; }
+.empty { color: #8b93a1; text-align: center; padding: 30px 0; }
