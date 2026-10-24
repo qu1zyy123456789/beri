@@ -2,44 +2,51 @@ const tg = window.Telegram.WebApp;
 tg.ready();
 tg.expand();
 
-const BOT_USERNAME = 'beriapp_bot'; // потом замените на имя своего бота
-const LIMITS = { free: 3, pro: 20, max: Infinity };
+const API_URL = 'https://expert-reasoning-obtain-forty.trycloudflare.com'; // потом заменим на публичный адрес
+const BOT_USERNAME = 'beri_bot';          // замените на логин вашего бота
 const PLAN_NAMES = { free: 'Free', pro: 'Pro', max: 'Max' };
 
-// ---------- Данные (потом заменим запросами к серверу) ----------
-const items = [
-  { id: 1, cat: 'Телефоны', title: 'iPhone 13 Pro, 128 ГБ', price: 17999, median: 27000, minutesAgo: 60 },
-  { id: 2, cat: 'Ноутбуки', title: 'MacBook Air M1, 256 ГБ', price: 41000, median: 55000, minutesAgo: 12 },
-  { id: 3, cat: 'Консоли', title: 'PlayStation 5, дисковод', price: 32000, median: 42000, minutesAgo: 35 },
-  { id: 4, cat: 'Видеокарты', title: 'RTX 3070, 8 ГБ', price: 21000, median: 27500, minutesAgo: 5 },
-  { id: 5, cat: 'Телефоны', title: 'iPhone 14, 128 ГБ', price: 39000, median: 48000, minutesAgo: 90 },
-  { id: 6, cat: 'Ноутбуки', title: 'ASUS TUF F15, RTX 3050', price: 45000, median: 62000, minutesAgo: 22 }
-];
+// ---------- Запросы к серверу ----------
+async function api(path, method = 'GET', body) {
+  const res = await fetch(API_URL + path, {
+    method: method,
+    headers: { 'Content-Type': 'application/json', 'X-Init-Data': tg.initData || 'dev' },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    const e = new Error(err.detail || 'Ошибка сервера');
+    e.status = res.status;
+    throw e;
+  }
+  return res.json();
+}
 
-// ---------- Состояние (хранится в телефоне пользователя) ----------
-const today = new Date().toDateString();
-let state = JSON.parse(localStorage.getItem('beri') || 'null') || {
-  plan: 'free', favs: [], orders: [], opens: { date: today, count: 0 }
-};
-if (state.opens.date !== today) state.opens = { date: today, count: 0 };
-
-function save() { localStorage.setItem('beri', JSON.stringify(state)); }
-
+// ---------- Состояние ----------
+let items = [];
+let me = { user: { first_name: 'Гость', id: 0 }, plan: 'free', opens_left: 3, favs: [], orders: [] };
 let category = 'Все';
 let query = '';
+
+async function refresh() {
+  try {
+    me = await api('/api/me');
+    items = await api('/api/items');
+  } catch (e) {
+    alert('Нет связи с сервером: ' + e.message);
+  }
+  renderAll();
+}
 
 // ---------- Расчёты ----------
 function discountOf(i) { return Math.round((1 - i.price / i.median) * 100); }
 function profitOf(i) { return Math.round(i.median * 0.9 - i.price - 1000 - i.median * 0.03); }
 function money(n) { return n.toLocaleString('ru-RU') + ' ₽'; }
-function opensLeft() {
-  const limit = LIMITS[state.plan];
-  return limit === Infinity ? Infinity : Math.max(0, limit - state.opens.count);
-}
+function opensLeft() { return me.opens_left === null ? Infinity : me.opens_left; }
 
 // ---------- Карточка ----------
 function cardHTML(i) {
-  const fav = state.favs.includes(i.id);
+  const fav = me.favs.includes(i.id);
   return `
     <div class="card">
       <button class="star" data-action="fav" data-id="${i.id}">${fav ? '★' : '☆'}</button>
@@ -76,7 +83,7 @@ function renderFeed() {
 
 // ---------- Избранное ----------
 function renderFav() {
-  const shown = items.filter(i => state.favs.includes(i.id));
+  const shown = items.filter(i => me.favs.includes(i.id));
   document.getElementById('favList').innerHTML =
     shown.length ? shown.map(cardHTML).join('') : '<div class="empty">Нажмите ☆ на карточке, чтобы сохранить лот</div>';
 }
@@ -93,8 +100,8 @@ function matches(order) {
 
 function renderOrders() {
   const box = document.getElementById('orders');
-  if (!state.orders.length) { box.innerHTML = '<div class="empty">Ордеров пока нет</div>'; return; }
-  box.innerHTML = state.orders.map(o => {
+  if (!me.orders.length) { box.innerHTML = '<div class="empty">Ордеров пока нет</div>'; return; }
+  box.innerHTML = me.orders.map(o => {
     const found = matches(o);
     return `
       <div class="order">
@@ -110,36 +117,33 @@ function renderOrders() {
   }).join('');
 }
 
-document.getElementById('orderForm').addEventListener('submit', function (e) {
+document.getElementById('orderForm').addEventListener('submit', async function (e) {
   e.preventDefault();
-  if (state.plan === 'free' && state.orders.length >= 1) {
-    alert('На Free доступен 1 ордер. Оформите тариф, чтобы создавать больше.');
-    document.querySelector('[data-target="profile"]').click();
-    return;
+  try {
+    await api('/api/orders', 'POST', {
+      query: document.getElementById('oQuery').value.trim(),
+      max_price: Number(document.getElementById('oPrice').value) || 0,
+      min_disc: Number(document.getElementById('oDisc').value) || 0
+    });
+    this.reset();
+    document.getElementById('oDisc').value = 20;
+    await refresh();
+  } catch (err) {
+    alert(err.message);
+    if (err.status === 403) document.querySelector('[data-target="profile"]').click();
   }
-  state.orders.push({
-    id: Date.now(),
-    query: document.getElementById('oQuery').value.trim(),
-    maxPrice: Number(document.getElementById('oPrice').value) || 0,
-    minDisc: Number(document.getElementById('oDisc').value) || 0,
-    active: true
-  });
-  save();
-  this.reset();
-  document.getElementById('oDisc').value = 20;
-  renderOrders();
 });
 
 // ---------- Профиль ----------
 function renderProfile() {
-  const user = (tg.initDataUnsafe && tg.initDataUnsafe.user) || { first_name: 'Гость', id: 0 };
+  const user = me.user;
   const left = opensLeft();
   document.getElementById('profileBox').innerHTML = `
     <div class="stat"><span>Имя</span><b>${user.first_name}</b></div>
-    <div class="stat"><span>Тариф</span><b>${PLAN_NAMES[state.plan]}</b></div>
+    <div class="stat"><span>Тариф</span><b>${PLAN_NAMES[me.plan]}</b></div>
     <div class="stat"><span>Открытий осталось сегодня</span><b>${left === Infinity ? '∞' : left}</b></div>
-    <div class="stat"><span>Ордеров</span><b>${state.orders.length}</b></div>
-    <div class="stat"><span>В избранном</span><b>${state.favs.length}</b></div>
+    <div class="stat"><span>Ордеров</span><b>${me.orders.length}</b></div>
+    <div class="stat"><span>В избранном</span><b>${me.favs.length}</b></div>
     <p class="hint">Реферальная ссылка (за друга +1 день Max):</p>
     <input class="field" readonly value="https://t.me/${BOT_USERNAME}?start=ref_${user.id}">
     <button class="btn" data-action="buy" data-plan="pro">Pro — 20 открытий в день</button>
@@ -147,49 +151,45 @@ function renderProfile() {
     <button class="btn ghost" data-action="buy" data-plan="free">Вернуть Free (для теста)</button>`;
 }
 
-// ---------- Общий перерисовщик ----------
 function renderAll() { renderFeed(); renderFav(); renderOrders(); renderProfile(); }
 
 // ---------- Обработка всех нажатий ----------
-document.addEventListener('click', function (e) {
+document.addEventListener('click', async function (e) {
   const el = e.target.closest('[data-action]');
   if (!el) return;
   const action = el.dataset.action;
   const id = Number(el.dataset.id);
 
-  if (action === 'cat') { category = el.dataset.cat; }
+  try {
+    if (action === 'cat') { category = el.dataset.cat; renderAll(); return; }
+    if (action === 'close') { document.getElementById('modal').classList.add('hidden'); return; }
 
-  if (action === 'fav') {
-    state.favs = state.favs.includes(id) ? state.favs.filter(x => x !== id) : [...state.favs, id];
-  }
+    if (action === 'fav') { await api('/api/fav/' + id, 'POST'); }
 
-  if (action === 'open') {
-    if (opensLeft() === 0) {
-      document.getElementById('modal').classList.remove('hidden');
-      return;
+    if (action === 'open') {
+      try {
+        const r = await api('/api/open/' + id, 'POST');
+        tg.openLink ? tg.openLink(r.url) : window.open(r.url);
+      } catch (err) {
+        if (err.status === 429) {
+          document.getElementById('modal').classList.remove('hidden');
+        } else { throw err; }
+      }
     }
-    state.opens.count++;
-    // Здесь потом будет реальная ссылка на объявление
-    tg.openLink ? tg.openLink('https://www.avito.ru') : window.open('https://www.avito.ru');
+
+    if (action === 'toggleOrder') { await api('/api/orders/' + id + '/toggle', 'POST'); }
+    if (action === 'delOrder') { await api('/api/orders/' + id, 'DELETE'); }
+
+    if (action === 'buy') {
+      // Демо: тариф включается сразу. Реальная оплата будет позже (Telegram Stars)
+      await api('/api/plan', 'POST', { plan: el.dataset.plan });
+      document.getElementById('modal').classList.add('hidden');
+    }
+
+    await refresh();
+  } catch (err) {
+    alert(err.message);
   }
-
-  if (action === 'toggleOrder') {
-    const o = state.orders.find(x => x.id === id);
-    o.active = !o.active;
-  }
-
-  if (action === 'delOrder') { state.orders = state.orders.filter(x => x.id !== id); }
-
-  if (action === 'buy') {
-    // Демо: тариф включается сразу. Реальная оплата будет позже (Telegram Stars)
-    state.plan = el.dataset.plan;
-    document.getElementById('modal').classList.add('hidden');
-  }
-
-  if (action === 'close') { document.getElementById('modal').classList.add('hidden'); }
-
-  save();
-  renderAll();
 });
 
 document.getElementById('search').addEventListener('input', function () {
@@ -211,3 +211,4 @@ tabs.forEach(function (tab) {
 });
 
 renderAll();
+refresh();
