@@ -2,7 +2,7 @@ const tg = window.Telegram.WebApp;
 tg.ready();
 tg.expand();
 
-const API_URL = 'https://expert-reasoning-obtain-forty.trycloudflare.com'; // потом заменим на публичный адрес
+const API_URL = 'https://polyester-inflation-unlike-limits.trycloudflare.com'; // потом заменим на публичный адрес
 const BOT_USERNAME = 'beri_bot';          // замените на логин вашего бота
 const PLAN_NAMES = { free: 'Free', pro: 'Pro', max: 'Max' };
 
