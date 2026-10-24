@@ -2,7 +2,7 @@ const tg = window.Telegram.WebApp;
 tg.ready();
 tg.expand();
 
-const BOT_USERNAME = 'beri_bot'; // потом замените на имя своего бота
+const BOT_USERNAME = 'beriapp_bot'; // потом замените на имя своего бота
 const LIMITS = { free: 3, pro: 20, max: Infinity };
 const PLAN_NAMES = { free: 'Free', pro: 'Pro', max: 'Max' };
 
